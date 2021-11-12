@@ -11,12 +11,15 @@ struct Inventory
 	struct Inventory *next; 	// Hold a address for the "next" object to link to the next object in line inside the linked list
 };
 
-// Fucntion protoypes
+// Function prototypes
 void displayCommands();
 void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct Inventory *current, struct Inventory *part, struct Inventory *head);
 char askAnotherItem(char choice);
-void printInventoryLst(struct Inventory *head, struct Inventory *first);
-void selectItem(struct Inventory *head, struct Inventory *first);
+void printInventoryLst(struct Inventory *head);
+void selectItem(struct Inventory *head);
+void modifyItem(struct Inventory *head);
+void deleteItem(struct Inventory *head, struct Inventory *part);
+void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first);
 
 
 
@@ -31,17 +34,17 @@ int main()
 	first->next = NULL;
 	current->next = NULL;
 
-	// Hold user's command
-	char choice[6];
+	char choice[6];     // Hold user's command
+	int isCreated = 0;      // Check if the user created a inventory linked list yet
 
 	printf("\nWelcome To The Inventory Program:");
-	
+
 	// Display a list of commands to the user
 	displayCommands();
-	
-	printf("\nPlease select a command: ");
 
-	
+	printf("\nPlease select a command or type help for a list of commands: ");
+
+
 	while (strcmp(choice, "exit") != 0)
     {
         scanf("\n%s", choice);
@@ -49,18 +52,61 @@ int main()
         // Create a new linked list while maintaining numerical order by part number
         if (strcmp(choice, "create") == 0)
         {
-            createInventoryLst(first, prev, current, part, head);
+            if (isCreated == 0)
+            {
+                createInventoryLst(first, prev, current, part, head);
 
-            // Set head to be the head node after creation
-            head = first->next;
+                isCreated = 1;      // A new list has been created, so set this bool to true
+            }
+            else
+            {
+                printf("\nYou have already created an inventory list.\n");
+            }
+
         }
         // Print the entire linked list
         else if (strcmp(choice, "print") == 0)
-            printInventoryLst(head, first);
+        {
+            if (isCreated)
+                printInventoryLst(head);
+            else
+                printf("\nCan not print the list, you have not created one.\n");
+        }
+        // Select a item from the linked list and print it
         else if (strcmp(choice, "select") == 0)
-        	selectItem(head, first);
+        {
+            if (isCreated)
+                selectItem(head);
+            else
+                printf("\nCan not select a item in the list, you have not created one.\n");
+        }
+        // Modify a item from the linked by updating qty and price
+        else if (strcmp(choice, "modify") == 0)
+        {
+            if (isCreated)
+                modifyItem(head);
+            else
+                printf("\nCan not modify the list, you have not created one.\n");
+        }
+        else if (strcmp(choice, "delete") == 0)
+        {
+            if (isCreated)
+                deleteItem(head, part);
+            else
+                printf("\nCan not delete a item in the list, you have not created one.\n");
+        }
+        else if (strcmp(choice, "insert") == 0)
+        {
+            if (isCreated)
+                insertItem(head, part, first);
+            else
+                printf("\nCan not insert a item in the list, you have not created one.\n");
+        }
         else if(strcmp(choice, "help") == 0)
         	displayCommands();
+
+        // Reset head after every command is called
+        head = first->next;
     }
 
     return 0;
@@ -75,6 +121,9 @@ void displayCommands()
     printf("\n\n\"create\"");
     printf("\n\"print\"");
     printf("\n\"select\"");
+    printf("\n\"modify\"");
+    printf("\n\"delete\"");
+    printf("\n\"insert\"");
     printf("\n\"exit\"");
     printf("\n\"help\"\n");
 }
@@ -133,7 +182,7 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
         if (isSecondIter && prev->partNumber < part->partNumber)
         {
             isSecondIter = 0; // Set this to false so this if statement wont run again
-            
+
             // Set the current item to point to the part item that the user most recently entered
             prev->next = part;
 
@@ -147,21 +196,21 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
         	if (isSecondIter)
         	{
         		isSecondIter = 0;
-        		
+
         		// Link the part item that the user just entered to the item after it (The old first node)
-	            part->next = first->next; 
-	
+	            part->next = first->next;
+
 	            // Give first the address for the item with the smallest part number that the user just entered
 	            first->next = part;
-	            
+
 	            prev = part;
-	            
+
 	            current = part->next;
 			}
 			else
 			{
 	            part->next = first->next;
-	
+
 	            first->next = part;
 			}
         }
@@ -170,9 +219,9 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
         {
         	// break the current links from prev to current and link part in between them
         	prev->next = part;
-        	
+
         	part->next = current;
-        	
+
         	// let prev hold the address to the item that the user just entered
         	prev = part;
 		}
@@ -209,14 +258,14 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
                 head = head->next;
             }
         }
-        
+
         // Ask the user if they want to add another inventory item in the linked list
         choice = askAnotherItem(choice);
-        
+
         if (choice == 'N')
             break;
     }
-    
+
     printf("\nInventory list created.\n");
 }
 
@@ -248,10 +297,10 @@ char askAnotherItem(char choice)
 }
 
 
-void printInventoryLst(struct Inventory *head, struct Inventory *first)
+void printInventoryLst(struct Inventory *head)
 {
 	printf("\n--------------------");
-	
+
     // traverse through the linked list and print the data from the list until the last item, then exit the while loop
     while (head != NULL)
     {
@@ -264,21 +313,18 @@ void printInventoryLst(struct Inventory *head, struct Inventory *first)
         // Once all the data is printed, traverse to the next item in the list
         head = head->next;
     }
-
-    // Reset head
-    head = first->next;
     printf("\n");
 }
 
 
-void selectItem(struct Inventory *head, struct Inventory *first)
+void selectItem(struct Inventory *head)
 {
 	int partNumber;
-	
+
 	// Ask the user for the item they would like to print, then use head to traverse through the linked list
 	printf("\nPlease enter the part number for the item you would like to print: ");
 	scanf("\n%d", &partNumber);
-	
+
 	while (head != NULL)
 	{
 		// Print the selected item if a part number for the item has been found
@@ -289,15 +335,119 @@ void selectItem(struct Inventory *head, struct Inventory *first)
 	        printf("\nQuantity: %d", head->quantity);
 	        printf("\nPrice: $%.2f", head->price);
 	        printf("\n--------------------\n");
-	        
-	        head = first->next;
 	        return;
 		}
-		
-		head = head->next;	
+
+		head = head->next;
 	}
-	
 	// If a part number has not been found, let the user know and reset head
-	printf("\nThe item with the part number %d is not found!", partNumber);
-	head = first->next;
+	printf("\nItem with part number %d not found.\n", partNumber);
+}
+
+
+void modifyItem(struct Inventory *head)
+{
+    int partNumber, newQty, newPrice;
+
+    printf("\nPlease enter the part number for the item you would like to modify: ");
+    scanf("\n%d", &partNumber);
+
+    // Traverse through the linked list until the item with the inputted part number has been found
+    while (head != NULL)
+    {
+        if (head->partNumber == partNumber)
+        {
+            // Ask the user for the new quantity and price that they would like to modify in the item they have selected
+            printf("\nPlease enter the quantity of the item: ");
+            scanf("\n%d", &newQty);
+            printf("\nPlease enter the price of the item: ");
+            scanf("\n%d", &newPrice);
+
+            // Update the qty and price in the item and let the user know it was successful
+            head->quantity = newQty;
+            head->price = newPrice;
+            printf("\nThe item with part number %d has successfully modified\n", partNumber);
+            return;
+        }
+
+        head = head->next;
+    }
+    printf("\nItem with part number %d not found.\n", partNumber);
+}
+
+
+void deleteItem(struct Inventory *head, struct Inventory *part)
+{
+    struct Inventory *temp;     // Have it hold the address for the item before head
+    int partNumber;
+
+    printf("\nPlease enter the part number for the item you would like to delete: ");
+    scanf("\n%d", &partNumber);
+
+    while (head != NULL)
+    {
+        // look ahead one item and compare part number to not lose the address of the item before the one the user wants to delete
+        if (head->partNumber == partNumber)
+        {
+            // Link the node before the one being deleted to the one that is in front of that node
+            temp->next = head->next;
+
+            // Free the item being deleted in memory
+            free(head);
+
+            printf("\nItem deleted\n");
+            return;
+        }
+
+        temp = head;    // Give it the address for head before head traverses up a node
+        head = head->next;
+    }
+
+    printf("\nItem with part number %d not found.\n", partNumber);
+}
+
+
+void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first)
+{
+    // Let the user enter the information for the new item
+    part = malloc(sizeof(*part));
+    printf("\nPart Number: ");
+    scanf("\n%d", &part->partNumber);
+    printf("\nQuantity: ");
+    scanf("\n%d", &part->quantity);
+    printf("\nPrice: ");
+    scanf("\n%f", &part->price);
+    part->next = NULL;
+
+    while (head != NULL)
+    {
+        // First check if the new item is less than the first one, if so insert and make it the new first item
+        if (part->partNumber < first->next->partNumber)
+        {
+            part->next = first->next;
+            first->next = part;
+
+            printf("\nItem successfully inserted\n");
+            return;
+        }
+        // If the user enters a part number larger than the last item of the list, link the last item to the new item
+        else if (head->next == NULL)
+        {
+            head->next = part;
+            printf("\nItem successfully inserted\n");
+            return;
+        }
+        // When we find that the item is within the list by part number, insert it and link it like so
+        else if (part->partNumber < head->next->partNumber)
+        {
+            part->next = head->next;
+
+            head->next = part;
+            printf("\nItem successfully inserted\n");
+            return;
+        }
+        head = head->next;
+    }
+
+    printf("\nInsertion failed.");
 }
