@@ -19,11 +19,10 @@ void printInventoryLst(struct Inventory *head);
 void selectItem(struct Inventory *head);
 void modifyItem(struct Inventory *head);
 void deleteItem(struct Inventory *head, struct Inventory *part);
-void askPart(struct Inventory *head, struct Inventory *part, struct Inventory *first);
+void askItem(struct Inventory *part);
 void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first);
 void saveList(struct Inventory *head);
 void addList(struct Inventory *head, struct Inventory *part, struct Inventory *first);
-
 
 
 int main()
@@ -44,9 +43,6 @@ int main()
 
 	// Display a list of commands to the user
 	displayCommands();
-
-	printf("\nPlease select a command or type help for a list of commands: ");
-
 
 	while (strcmp(choice, "exit") != 0)
     {
@@ -100,7 +96,14 @@ int main()
         else if (strcmp(choice, "insert") == 0)
         {
             if (isCreated)
-                askPart(head, part, first);
+            {
+                part = malloc(sizeof(*part));
+                askItem(part);
+
+                // call insert item function
+                insertItem(head, part, first);
+                printf("\nItem successfully inserted\n");
+            }
             else
                 printf("\nCan not insert a item in the list, you have not created one.\n");
         }
@@ -154,18 +157,8 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
 
     // Upon first iteration, use previous to hold the first item added into inventory linked list before while loop
     prev = malloc(sizeof(*prev));
+    askItem(prev);
 
-    printf("\nPart Number: ");
-    scanf("\n%d", &prev->partNumber);
-
-    printf("\nQuantity: ");
-    scanf("\n%d", &prev->quantity);
-
-    printf("\nPrice: ");
-    scanf("\n%f", &prev->price);
-
-    // Set next in the current Inventory structure to NULL for now
-    prev->next = NULL;
     fflush(stdin);
 
     // first->next == NULL means that the program is on its first iteration and there is not first object yet, so assign first to the current address
@@ -181,21 +174,12 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
     // Run the while loop if the user wants to add more inventory items
     while (choice == 'Y')
     {
-        // Let the user enter values of the Inventory element in the linked list
+
         // Allocate memory for the current structure pointer first
         part = malloc(sizeof(*part));
 
-        printf("\nPart Number: ");
-        scanf("\n%d", &part->partNumber);
-
-        printf("\nQuantity: ");
-        scanf("\n%d", &part->quantity);
-
-        printf("\nPrice: ");
-        scanf("\n%f", &part->price);
-
-        // Set next in the current Inventory structure to NULL for now
-        part->next = NULL;
+        // Let the user enter values of the Inventory element in the linked list
+        askItem(part);
         fflush(stdin);
 
         // Second iteration if current is null, current will then equal to part and prev will point to part
@@ -427,21 +411,16 @@ void deleteItem(struct Inventory *head, struct Inventory *part)
 }
 
 
-void askPart(struct Inventory *head, struct Inventory *part, struct Inventory *first)
+void askItem(struct Inventory *item)
 {
-    // Let the user enter the information for the new item
-    part = malloc(sizeof(*part));
+    // Ask the user information about the item and put it into the structure
     printf("\nPart Number: ");
-    scanf("\n%d", &part->partNumber);
+    scanf("\n%d", &item->partNumber);
     printf("\nQuantity: ");
-    scanf("\n%d", &part->quantity);
+    scanf("\n%d", &item->quantity);
     printf("\nPrice: ");
-    scanf("\n%f", &part->price);
-    part->next = NULL;
-
-    // call insert item function
-    insertItem(head, part, first);
-    printf("\nItem successfully inserted\n");
+    scanf("\n%f", &item->price);
+    item->next = NULL;
 }
 
 
@@ -499,6 +478,7 @@ void saveList(struct Inventory *head)
 
     while (head != NULL)
     {
+        // add a \n before adding new CSVs after the first line
         if (!isFirstLine)
             fprintf(filePtr, "\n");
 
@@ -540,7 +520,7 @@ void addList(struct Inventory *head, struct Inventory *part, struct Inventory *f
     // Break out of loop when the program has no more lines to read in the csv file
     while (!feof(filePtr))
     {
-        // use fscanf to read each comma seperated value and assign them to the attributes in the part structure
+        // use fscanf to read each comma separated value and assign them to the attributes in the part structure
         part = malloc(sizeof(*part));
         fscanf(filePtr, "%d,%d,%f", &part->partNumber, &part->quantity, &part->price);
         part->next = NULL;
