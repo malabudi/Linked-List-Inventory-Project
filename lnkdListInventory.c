@@ -19,7 +19,10 @@ void printInventoryLst(struct Inventory *head);
 void selectItem(struct Inventory *head);
 void modifyItem(struct Inventory *head);
 void deleteItem(struct Inventory *head, struct Inventory *part);
+void askPart(struct Inventory *head, struct Inventory *part, struct Inventory *first);
 void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first);
+void saveList(struct Inventory *head);
+void addList(struct Inventory *head, struct Inventory *part, struct Inventory *first);
 
 
 
@@ -62,7 +65,6 @@ int main()
             {
                 printf("\nYou have already created an inventory list.\n");
             }
-
         }
         // Print the entire linked list
         else if (strcmp(choice, "print") == 0)
@@ -98,9 +100,23 @@ int main()
         else if (strcmp(choice, "insert") == 0)
         {
             if (isCreated)
-                insertItem(head, part, first);
+                askPart(head, part, first);
             else
                 printf("\nCan not insert a item in the list, you have not created one.\n");
+        }
+        else if (strcmp(choice, "save") == 0)
+        {
+            if (isCreated)
+                saveList(head);
+            else
+                printf("\nInventory list not found, unable to save to CSV file.\n");
+        }
+        else if (strcmp(choice, "add") == 0)
+        {
+            if (isCreated)
+                addList(head, part, first);
+            else
+                printf("\nCreate a file first before adding an existing list from a CSV file.\n");
         }
         else if(strcmp(choice, "help") == 0)
         	displayCommands();
@@ -118,12 +134,14 @@ int main()
 void displayCommands()
 {
     // Print all the commands in the program
-    printf("\n\n\"create\"");
+    printf("\n\"create\"");
     printf("\n\"print\"");
     printf("\n\"select\"");
     printf("\n\"modify\"");
     printf("\n\"delete\"");
     printf("\n\"insert\"");
+    printf("\n\"save\"");
+    printf("\n\"add\"");
     printf("\n\"exit\"");
     printf("\n\"help\"\n");
 }
@@ -148,6 +166,7 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
 
     // Set next in the current Inventory structure to NULL for now
     prev->next = NULL;
+    fflush(stdin);
 
     // first->next == NULL means that the program is on its first iteration and there is not first object yet, so assign first to the current address
     if (first->next == NULL)
@@ -177,6 +196,7 @@ void createInventoryLst(struct Inventory *first, struct Inventory *prev, struct 
 
         // Set next in the current Inventory structure to NULL for now
         part->next = NULL;
+        fflush(stdin);
 
         // Second iteration if current is null, current will then equal to part and prev will point to part
         if (isSecondIter && prev->partNumber < part->partNumber)
@@ -407,7 +427,7 @@ void deleteItem(struct Inventory *head, struct Inventory *part)
 }
 
 
-void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first)
+void askPart(struct Inventory *head, struct Inventory *part, struct Inventory *first)
 {
     // Let the user enter the information for the new item
     part = malloc(sizeof(*part));
@@ -419,6 +439,14 @@ void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory
     scanf("\n%f", &part->price);
     part->next = NULL;
 
+    // call insert item function
+    insertItem(head, part, first);
+    printf("\nItem successfully inserted\n");
+}
+
+
+void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory *first)
+{
     while (head != NULL)
     {
         // First check if the new item is less than the first one, if so insert and make it the new first item
@@ -426,28 +454,103 @@ void insertItem(struct Inventory *head, struct Inventory *part, struct Inventory
         {
             part->next = first->next;
             first->next = part;
-
-            printf("\nItem successfully inserted\n");
             return;
         }
         // If the user enters a part number larger than the last item of the list, link the last item to the new item
         else if (head->next == NULL)
         {
             head->next = part;
-            printf("\nItem successfully inserted\n");
             return;
         }
         // When we find that the item is within the list by part number, insert it and link it like so
         else if (part->partNumber < head->next->partNumber)
         {
             part->next = head->next;
-
             head->next = part;
-            printf("\nItem successfully inserted\n");
             return;
         }
+
         head = head->next;
     }
 
     printf("\nInsertion failed.");
+}
+
+
+void saveList(struct Inventory *head)
+{
+    // Save the inventory linked list to a CSV file
+    FILE *filePtr;
+
+    char fileName[50];
+    int isFirstLine = 1;
+
+    // Ask for file name and open it in write mode with strcat inside to concatenate the file name with .csv
+    fflush(stdin);
+    printf("\nWhat would you like to name your file: ");
+    fgets(fileName, 50, stdin);
+
+    fileName[strcspn(fileName, "\n")] = '\0';
+
+    strcat(fileName, ".csv");
+    filePtr = fopen(fileName, "w");
+
+    printf("\nSaving to %s file...", fileName);
+
+    while (head != NULL)
+    {
+        if (!isFirstLine)
+            fprintf(filePtr, "\n");
+
+        // write to file the partNumber, quantity, and price as the linked list iterates
+        fprintf(filePtr, "%d,%d,%.2f", head->partNumber, head->quantity, head->price);
+        head = head->next;
+
+        isFirstLine = 0;
+    }
+
+    fclose(filePtr);
+    printf("\n%s saved.\n", fileName);
+}
+
+
+void addList(struct Inventory *head, struct Inventory *part, struct Inventory *first)
+{
+    // add the list from the CSV file into the current list into the program
+    FILE *filePtr;
+
+    char fileName[50];
+
+    // Ask for the file name to add to the current list
+    fflush(stdin);
+    printf("\nPlease enter the name of the file (do not inclue .csv): ");
+    fgets(fileName, 50, stdin);
+
+    fileName[strcspn(fileName, "\n")] = '\0';
+
+    strcat(fileName, ".csv");
+    filePtr = fopen(fileName, "r");
+
+    // Check if file exists
+    if (filePtr == NULL)
+    {
+        printf("\nError: File not found.\n");
+        return;
+    }
+    // Break out of loop when the program has no more lines to read in the csv file
+    while (!feof(filePtr))
+    {
+        // use fscanf to read each comma seperated value and assign them to the attributes in the part structure
+        part = malloc(sizeof(*part));
+        fscanf(filePtr, "%d,%d,%f", &part->partNumber, &part->quantity, &part->price);
+        part->next = NULL;
+
+        // call insert item function to individually insert each item from the CSV file
+        insertItem(head, part, first);
+
+        head = first->next;
+    }
+
+    fclose(filePtr);
+    printf("\nAdded the list from %s to the program\n", fileName);
 }
