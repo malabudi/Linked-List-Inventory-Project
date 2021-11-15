@@ -137,16 +137,16 @@ int main()
 void displayCommands()
 {
     // Print all the commands in the program
-    printf("\n\"create\"");
-    printf("\n\"print\"");
-    printf("\n\"select\"");
-    printf("\n\"modify\"");
-    printf("\n\"delete\"");
-    printf("\n\"insert\"");
-    printf("\n\"save\"");
-    printf("\n\"add\"");
-    printf("\n\"exit\"");
-    printf("\n\"help\"\n");
+    printf("\n\"create\"   - Create a new linked list of part number, quantity, and price");
+    printf("\n\"print\"    - Print from the entire list");
+    printf("\n\"select\"   - Print the information for one user selected part number");
+    printf("\n\"modify\"   - Modify an existing structure into the list");
+    printf("\n\"delete\"   - Delete an existing structure into the sorted link");
+    printf("\n\"insert\"   - Insert a new structure into the sorted linked list");
+    printf("\n\"save\"     - Save a list to a CSV file");
+    printf("\n\"add\"      - Add to an existing list from a CSV file");
+    printf("\n\"exit\"     - Exit from the program");
+    printf("\n\"help\"     - Display a list of commands\n");
 }
 
 
